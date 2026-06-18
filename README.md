@@ -14,6 +14,32 @@
 
 To solve this, this tool adopts an **"AI infers schema -> Generates tailored script -> Runs locally"** approach. By uploading a lightweight, sanitized sample containing only headers and 1-2 rows, the AI generates a customized Python script for your exact dataset. You then run this script on your local machine to perform automated quality checks, deduplication, missing value analysis, outlier detection, KPI aggregation, correlation, and visualizations. This guarantees zero data leakage and completely bypasses token/size limitations.
 
+## 操作流程 / Step-by-Step Workflow
+
+**步骤 1：本地提取样例 (Extract Sample)**  
+打开你需要分析的原始大型 Excel/CSV 文件，仅复制**表头（Headers）和 1-2 行具体数据记录**，将它们粘贴并保存为一个全新的 Excel 文件。  
+*Open your large source Excel/CSV file, copy only the headers and 1-2 rows of data, and save them into a brand-new Excel file.*
+
+**步骤 2：手动脱敏 (Sanitize Data)**  
+根据你的业务经验，手动将这个新文件中的敏感信息替换或打码。例如：将真实人名改为“张XX”，修改真实手机号、清除真实身份证号、邮箱或详细地址等可能识别个人的信息。  
+*Based on your business context, manually mask or replace sensitive information in this new file (e.g., change real names to "John Doe", mask phone numbers, clear ID numbers, emails, or exact addresses).*
+
+**步骤 3：上传并调用 Skill (Upload & Invoke)**  
+将这份脱敏后的轻量级样例 Excel 上传到 AI 对话框，并发送以下指令：  
+*Upload this sanitized, lightweight sample file to the AI chat and send the following prompt:*
+```text
+Use $excel-data-profiler 分析这个脱敏 Excel 样例，并生成完整的数据质量检测和探索分析 Python 代码。
+
+**步骤 4：确认配置 (Confirm Settings)**
+AI 将基于样例推断候选字段并向你确认：
+The AI will infer the schema and ask you to confirm the configuration: 请回复：是 / 否 / 其他: ...
+确认后，它会生成最终的 Python 脚本。
+
+**步骤 5：本地运行 (Run Locally)**
+复制生成的 Python 脚本。在代码顶部的配置区将文件路径修改为你本地原始大文件的真实路径，并在本地 Python 环境中运行它。
+Copy the generated Python script, point the file path variable to your actual large dataset on your local machine, and run it.
+
+
 ## 输入要求 / Expected Input
 
 - Excel 或 CSV 文件。
@@ -28,14 +54,13 @@ To solve this, this tool adopts an **"AI infers schema -> Generates tailored scr
 
 ## 输出内容 / Expected Output
 
-- 一份可运行的 Python 脚本。
-- 一份 `data_quality_report.xlsx` 数据质量报告。
-- 可选的图表 PNG 文件。
+运行生成的 Python 脚本后，你将在本地获得：
+- 一份 data_quality_report.xlsx 数据质量报告。
+- 可选的图表 PNG 文件（默认输出在单独文件夹）。
 - 可选：把图表嵌入 Excel 报告中。
-
-- A runnable Python script.
-- A `data_quality_report.xlsx` data quality report.
-- Optional chart PNG files.
+After running the generated Python script locally, you will get:
+- A data_quality_report.xlsx data quality report.
+- Optional chart PNG files (saved to a folder by default).
 - Optional embedded charts inside the Excel report.
 
 ## 使用方式 / How To Use
