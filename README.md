@@ -17,7 +17,7 @@ To solve this, this tool adopts an **"AI infers schema -> Generates tailored scr
 ## 操作流程 / Step-by-Step Workflow
 
 **步骤 1：本地提取样例 (Extract Sample)**  
-打开你需要分析的原始大型 Excel/CSV 文件，仅复制**表头（Headers）和 1-2 行具体数据记录**，将它们粘贴并保存为一个全新的 Excel 文件。  
+打开你需要分析的原始 Excel/CSV 文件，仅复制**表头（Headers）和 1-2 行具体数据记录**，将它们粘贴并保存为一个全新的 Excel 文件。
 *Open your large source Excel/CSV file, copy only the headers and 1-2 rows of data, and save them into a brand-new Excel file.*
 
 **步骤 2：手动脱敏 (Sanitize Data)**  
