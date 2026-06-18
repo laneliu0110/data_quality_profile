@@ -27,8 +27,9 @@ To solve this, this tool adopts an **"AI infers schema -> Generates tailored scr
 **步骤 3：上传并调用 Skill (Upload & Invoke)**  
 将这份脱敏后的轻量级样例 Excel 上传到 AI 对话框，并发送以下指令：  
 *Upload this sanitized, lightweight sample file to the AI chat and send the following prompt:*
-```text
+```
 Use $excel-data-profiler 分析这个脱敏 Excel 样例，并生成完整的数据质量检测和探索分析 Python 代码。
+```
 
 **步骤 4：确认配置 (Confirm Settings)**
 AI 将基于样例推断候选字段并向你确认：
