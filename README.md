@@ -2,9 +2,17 @@
 
 ## 背景 / Background
 
-`excel-data-profiler` 用于根据脱敏后的 Excel/CSV 样例生成可复用的数据质量检测和探索分析 Python 脚本。它适合你只有表头和 1-2 行 sample 数据、但希望在完整数据上运行自动质检、查重、空值、枚举值、异常值、KPI 汇总、相关性和图表分析的场景。
+`excel-data-profiler` 旨在通过 AI 辅助解决大型 Excel/CSV 文件的初期数据探索与质量检测需求。在传统的 AI 数据分析流程中，直接将完整数据上传给大模型对话框会面临两大痛点：
+1. **数据隐私与泄露风险**：真实的商业或个人敏感数据通常受规章限制，绝不能轻易上传至线上的 AI 接口。
+2. **性能与成本瓶颈**：数据量过大不仅会导致上传和分析耗时极长，还会消耗海量的 Token，极易触发上下文长度限制。
 
-`excel-data-profiler` generates reusable Python scripts for data quality checks and exploratory analysis from a sanitized Excel/CSV sample. It is designed for cases where the sample contains only headers and 1-2 rows, while the generated script will run against the full dataset locally.
+为了解决这些问题，本工具采用了**“AI 分析数据框架 -> 生成定制化脚本 -> 纯本地运行”**的模式。你只需提供仅包含表头和 1-2 行脱敏数据的轻量级样例，AI 就能帮你推断数据结构并生成一份专属的 Python 分析代码。你在本地机器上运行这段代码，即可安全、高效地完成自动质检、查重、空值、枚举值、异常值、KPI 汇总、相关性和图表分析。这从根本上杜绝了数据泄露风险，并彻底打破了 Token 消耗与数据规模的限制。
+
+`excel-data-profiler` is designed to assist with the initial data exploration and quality profiling of large Excel/CSV files. Uploading full datasets directly to AI chat interfaces typically presents two major issues:
+1. **Data Privacy and Leakage Risks**: Sensitive business or personal data is strictly regulated and cannot be exposed to online LLM APIs.
+2. **Performance and Cost Limits**: Massive datasets take too long to upload/process and consume excessive amounts of tokens, often hitting context length limits.
+
+To solve this, this tool adopts an **"AI infers schema -> Generates tailored script -> Runs locally"** approach. By uploading a lightweight, sanitized sample containing only headers and 1-2 rows, the AI generates a customized Python script for your exact dataset. You then run this script on your local machine to perform automated quality checks, deduplication, missing value analysis, outlier detection, KPI aggregation, correlation, and visualizations. This guarantees zero data leakage and completely bypasses token/size limitations.
 
 ## 输入要求 / Expected Input
 
