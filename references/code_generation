@@ -1,0 +1,345 @@
+# Code Generation Reference
+
+## Recommended Script Shape
+
+Generate notebook-style Python that can also run as a `.py` file. Prefer small, reusable functions and one `run_profile(df, config)` orchestration function.
+
+Use Chinese comments and Chinese output labels by default. The generated script should read naturally to a Chinese-speaking analyst.
+
+Use this high-level structure:
+
+1. Imports and optional plotting dependency guard
+2. User configuration with Chinese comments
+3. Data loading
+4. Schema coercion
+5. Overall profile
+6. Completeness checks
+7. Uniqueness checks
+8. Categorical validity checks
+9. Numeric distribution and outlier checks
+10. KPI breakdowns
+11. Plot helpers
+12. Correlation helpers
+13. Excel report export with Chinese sheet names and Chinese column labels
+14. Optional embedded-chart export
+15. Example execution block
+
+## Configuration Pattern
+
+Use an editable configuration block similar to this. Include Chinese comments explaining every setting that a user may edit.
+
+```python
+# =========================
+# 用户可手动修改的配置区
+# =========================
+
+# 需要分析的完整数据文件路径：请替换成真实文件路径
+FILE_PATH = r"your_full_data.xlsx"
+
+# Excel工作表名称或序号：默认用 0 自动读取第一个 sheet，避免正式文件没有样例 sheet 名时报错；如果明确知道目标 sheet，再改成真实名称，如 "订单明细"
+SHEET_NAME = 0
+
+# 输出目录：质检报告、图表PNG会写到这里
+OUTPUT_DIR = Path("excel_profile_outputs")
+
+# 最终Excel质检报告路径
+OUTPUT_REPORT = OUTPUT_DIR / "data_quality_report.xlsx"
+
+# 主键字段：用于检查重复。复合主键请写多个字段，如 ["订单编号", "商品ID"]
+PRIMARY_KEY = ["order_id"]
+
+# 理论上不应重复的字段：可以为空列表
+UNIQUE_FIELDS = []
+
+# 日期字段：会自动转成datetime，失败值会进入类型转换提示
+DATE_COLUMNS = ["order_date"]
+
+# 数值字段：用于统计、异常值、相关性和图表
+NUMERIC_COLUMNS = ["amount"]
+
+# 分类字段：用于枚举值top10、KPI分组汇总
+CATEGORICAL_COLUMNS = ["region", "channel"]
+
+# KPI字段及聚合方式：支持 sum/mean/count/median/min/max/nunique
+KPI_CONFIG = {
+    "amount": "sum",
+    # "unit_price": "mean",
+}
+
+# 每个分类字段输出前N个枚举值
+TOP_N = 10
+
+# 是否把图表图片嵌入Excel。False表示单独输出PNG并在报告里列路径；True表示尝试嵌入Excel
+EMBED_CHARTS_IN_EXCEL = False
+```
+
+Use lists even for single key fields so composite keys are easy to support.
+Important sheet-name rule: default to `SHEET_NAME = 0` in generated scripts. Do not copy the sample workbook's sheet name such as `Sheet1` into the final configuration unless the user explicitly asks for a fixed sheet name. This keeps the script robust when the full dataset uses a different sheet name.
+
+## Confirmation Block Before Code
+
+Before generating final code, ask for confirmation unless the user explicitly asks to skip confirmation or asks for immediate code. The confirmation block should include inferred values and the exact reply options `是`, `否`, and `其他`.
+
+Example:
+
+```text
+我先基于样例做了如下推断，请确认后我再生成最终脚本：
+1. 主键/复合主键：订单编号
+2. 唯一性校验字段：序号、订单编号
+3. KPI字段与聚合方式：实收实付=sum，酒店间夜=sum，间夜均价=mean
+4. 日期字段：预订日期、入住日期、离店日期
+5. 分类维度字段：订单状态、预订来源、城市、房型、酒店品牌
+6. 图表输出：默认单独输出PNG，并在Excel报告中列出路径
+
+请回复：是 / 否 / 其他: ...
+```
+
+If the user confirms, generate the script. If the user changes fields, update the configuration first.
+
+## Function Inventory
+
+Include or adapt these function groups depending on the user's request:
+
+- `load_table(file_path, sheet_name=0)`: dispatch to `pd.read_excel` or `pd.read_csv` by extension.
+- `coerce_schema(df, numeric_cols=None, date_cols=None, string_cols=None)`: copy df, safely convert columns, and return conversion warnings.
+- `profile_overview(df)`: return row count, column count, dtype counts, memory usage, `describe(include="all")`, and per-column stats.
+- `missingness_report(df)`: null count, null percentage, non-null count, and blank-string count for object columns.
+- `uniqueness_report(df, primary_key=None, unique_fields=None)`: duplicate counts for single and composite keys, plus duplicated row samples.
+- `categorical_report(df, categorical_cols, top_n=10)`: cardinality, unique ratio, top values, and high-cardinality warnings.
+- `numeric_report(df, numeric_cols)`: min, max, mean, median, std, quantiles, zero/negative counts, and missing counts.
+- `outlier_report_iqr(df, numeric_cols, k=1.5)`: IQR lower/upper bounds and flagged counts.
+- `plot_histograms(df, numeric_cols, bins=30)`: histogram grid.
+- `plot_boxplots(df, numeric_cols)`: box plots for outlier review.
+- `plot_top_categories(df, col, top_n=10)`: horizontal bar chart for category frequency.
+- `kpi_by_category(df, category_cols, kpi_config, top_n=10)`: aggregate each KPI by each category and return sorted tables.
+- `plot_kpi_by_category(df, category_col, kpi_col, agg="sum", top_n=10)`: bar chart.
+- `plot_scatter(df, x, y, hue=None)`: scatter helper.
+- `plot_time_trend(df, date_col, kpi_col, agg="sum", freq="M")`: time trend chart.
+- `correlation_report(df, numeric_cols=None, method="pearson")`: pairwise correlation table sorted by absolute correlation.
+- `plot_correlation_heatmap(df, numeric_cols=None, method="pearson")`: heatmap.
+- `export_quality_report(output_path, reports)`: write tables to separate Excel sheets using Chinese sheet names.
+- `translate_report_columns(df)`: rename common report fields to Chinese.
+- `embed_chart_images(report_path, image_paths)`: optional helper using `openpyxl.drawing.image.Image` to insert PNGs into chart sheets when `EMBED_CHARTS_IN_EXCEL = True`.
+
+## Chinese Sheet Names
+
+Use this mapping when exporting the Excel report:
+
+```python
+SHEET_NAME_MAP = {
+    "overview": "整体概览",
+    "dtype_counts": "字段类型统计",
+    "column_profile": "字段画像",
+    "missingness": "完整性检查",
+    "uniqueness": "唯一性检查",
+    "categorical_summary": "类别字段概览",
+    "numeric_summary": "数值字段概览",
+    "outliers_iqr": "异常值检查",
+    "business_rules": "业务规则检查",
+    "pii_warning": "敏感字段提示",
+    "correlation_pairs": "相关性明细",
+    "conversion_warnings": "类型转换提示",
+    "environment_notes": "运行环境说明",
+    "plot_files": "图表文件清单",
+}
+```
+
+For dynamically generated sheets:
+
+- `top_<字段名>` -> `枚举Top_<字段名>`
+- `kpi_<维度>__<指标>_<聚合>` -> `KPI_<维度>_<指标>`
+- duplicate samples -> `重复样例_<字段名>`
+
+Remember Excel sheet names must be 31 characters or fewer and cannot contain `[]:*?/\`.
+
+## Chinese Column Labels
+
+Use this mapping for common report fields:
+
+```python
+COLUMN_NAME_MAP = {
+    "column": "字段名",
+    "columns": "字段组合",
+    "dtype": "字段类型",
+    "metric": "指标",
+    "value": "值",
+    "rows": "行数",
+    "non_null": "非空数量",
+    "non_null_count": "非空数量",
+    "null_count": "空值数量",
+    "null_pct": "空值比例",
+    "blank_string_count": "空字符串数量",
+    "unique_count": "唯一值数量",
+    "unique_ratio": "唯一值比例",
+    "record_count": "记录数",
+    "check_type": "检查类型",
+    "status": "检查结果",
+    "duplicate_rows": "重复行数",
+    "duplicate_key_count": "重复键数量",
+    "unique_key_count": "唯一键数量",
+    "warning": "提示",
+    "note": "说明",
+    "rule": "规则",
+    "description": "规则说明",
+    "violation_count": "违规数量",
+    "violation_pct": "违规比例",
+    "field_a": "字段A",
+    "field_b": "字段B",
+    "correlation": "相关系数",
+    "abs_correlation": "相关系数绝对值",
+    "method": "方法",
+    "plot": "图表名称",
+    "path": "文件路径",
+}
+```
+
+Do not translate source data column names unless the user asks for it. Translate generated report metadata columns.
+
+## Plotting Dependency Behavior
+
+Generated scripts should include an optional import pattern:
+
+```python
+try:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    HAS_PLOTTING = True
+except ModuleNotFoundError:
+    plt = None
+    sns = None
+    HAS_PLOTTING = False
+```
+
+If `HAS_PLOTTING` is false, skip chart generation but still export the Excel report and add a row to `运行环境说明` explaining that `matplotlib`/`seaborn` are missing in the Python environment used to run the script.
+
+Explain to the user that installing packages globally only helps when they run the script with global Python. If they use Anaconda, they should run the script inside the conda environment that already has the packages, or install the packages into that exact environment:
+
+```bash
+conda install matplotlib seaborn openpyxl
+# or
+pip install matplotlib seaborn openpyxl
+```
+
+
+## Chinese Font Handling For Charts
+
+Generated scripts must configure a Chinese-capable matplotlib font before creating any chart. This is required because chart labels, titles, legends, and tick labels often use Chinese source field names.
+
+Add this import when plotting is available:
+
+```python
+from matplotlib import font_manager
+```
+
+Use a helper like this:
+
+```python
+def setup_chinese_plot_font():
+    """配置 matplotlib 中文字体，避免中文字段名在 PNG 图表中显示为方块。"""
+    if not HAS_PLOTTING:
+        return
+
+    preferred_fonts = [
+        "Microsoft YaHei",
+        "Microsoft YaHei UI",
+        "SimHei",
+        "Noto Sans CJK SC",
+        "Source Han Sans SC",
+        "Arial Unicode MS",
+    ]
+    installed_fonts = {font.name for font in font_manager.fontManager.ttflist}
+    available_fonts = [font for font in preferred_fonts if font in installed_fonts]
+
+    if available_fonts:
+        plt.rcParams["font.sans-serif"] = available_fonts + plt.rcParams.get("font.sans-serif", [])
+    else:
+        print("提示：未检测到微软雅黑/黑体等中文字体，图表中文可能显示异常。")
+
+    plt.rcParams["axes.unicode_minus"] = False
+```
+
+**CRITICAL RULE FOR PLOTTING INITIALIZATION:** 
+If you apply a Seaborn theme (e.g., `sns.set_theme(style="whitegrid")`), you MUST call it **BEFORE** `setup_chinese_plot_font()`. Seaborn's theme initialization resets Matplotlib's global `rcParams`, which will overwrite any previously configured Chinese fonts and cause Chinese characters to render as squares.
+
+Correct execution order:
+1. `sns.set_theme(...)`
+2. `setup_chinese_plot_font()`
+3. Any actual plotting functions
+
+On Windows, `Microsoft YaHei` is usually the preferred font. If charts are embedded into Excel, remember that the embedded objects are PNG images; Chinese text must render correctly when the PNG is created, not during Excel embedding.
+## Chart Embedding Option
+
+Default behavior: write PNG files separately and include paths in `图表文件清单`.
+
+If embedding is requested, generate a helper similar to:
+
+```python
+def embed_chart_images(report_path, image_paths):
+    from openpyxl import load_workbook
+    from openpyxl.drawing.image import Image
+
+    wb = load_workbook(report_path)
+    for title, path in image_paths.items():
+        if not path or not Path(path).exists():
+            continue
+        ws = wb.create_sheet(title=make_safe_sheet_name(f"图表_{title}"))
+        img = Image(str(path))
+        img.anchor = "A1"
+        ws.add_image(img)
+    wb.save(report_path)
+```
+
+Warn that embedded images increase report size and may need manual layout tuning for many charts.
+
+## Key and KPI Confirmation Logic
+
+When generating code from a sample, put inferred candidates near the top as editable variables and explain assumptions before the code.
+
+Candidate key heuristics:
+
+- Strong single-key candidates: id-like names, non-null in sample, stable-looking values.
+- Composite-key candidates: combinations of order/customer/date/product/channel-like fields when no single id exists.
+- Fields that should be unique: invoice numbers, order numbers, transaction numbers, account numbers.
+
+KPI heuristics:
+
+- Sum: amount, revenue, sales, gmv, quantity, cost, profit.
+- Mean: price, rate, margin percentage, score, rating, duration, unit price.
+- Count: records, orders, users, events.
+- Distinct count: customer_id, user_id, product_id when measuring reach or coverage.
+
+If unsure, ask for confirmation. If the user asks for immediate code, generate `KPI_CONFIG = {}` with commented examples instead of pretending certainty.
+
+## Quality Checks Worth Adding
+
+Add these when relevant:
+
+- Blank strings and whitespace-only values in text columns.
+- Mixed date parsing failures and invalid date ranges.
+- Negative values in fields that likely should be non-negative.
+- Zero values in fields where zero may indicate missing or invalid data.
+- Unexpected category levels compared with a user-provided allowed list placeholder.
+- High-cardinality category warnings.
+- Duplicate rows across all columns.
+- Constant columns and near-constant columns.
+- Numeric columns stored as text with currency symbols, commas, or percent signs.
+- Potential PII warning for columns named phone, email, address, id card, name, mobile, or Chinese equivalents such as 姓名, 电话, 手机, 证件, 身份证, 邮箱, 地址.
+
+## Output Style
+
+Before the code, summarize inferred schema in a compact table:
+
+| 字段名 | 推断类型 | 可能角色 | 备注 |
+
+After the code, include a short Chinese "如何使用" note:
+
+1. 替换 `FILE_PATH`。
+2. 确认或修改 `PRIMARY_KEY`, `UNIQUE_FIELDS`, `NUMERIC_COLUMNS`, `DATE_COLUMNS`, `CATEGORICAL_COLUMNS`, `KPI_CONFIG`。
+3. 如果要生成图片，请确保运行脚本的 Python 环境安装了 `matplotlib` 和 `seaborn`。
+4. 运行脚本。
+5. 查看控制台输出、`data_quality_report.xlsx`、以及可选的图表 PNG 文件。
+
+
+
