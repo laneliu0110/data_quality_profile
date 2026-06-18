@@ -59,6 +59,7 @@ Copy the generated Python script, point the file path variable to your actual la
 - 一份 data_quality_report.xlsx 数据质量报告。
 - 可选的图表 PNG 文件（默认输出在单独文件夹）。
 - 可选：把图表嵌入 Excel 报告中。
+  
 After running the generated Python script locally, you will get:
 - A data_quality_report.xlsx data quality report.
 - Optional chart PNG files (saved to a folder by default).
