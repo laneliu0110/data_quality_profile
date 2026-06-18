@@ -6,7 +6,7 @@
 1. **数据隐私与泄露风险**：真实的商业或个人敏感数据通常受规章限制，绝不能轻易上传至线上的 AI 接口。
 2. **性能与成本瓶颈**：数据量过大不仅会导致上传和分析耗时极长，还会消耗海量的 Token，极易触发上下文长度限制。
 
-为了解决这些问题，本工具采用了**AI 分析数据框架 -> 生成定制化脚本 -> 纯本地运行**的模式。你只需提供仅包含表头和 1-2 行脱敏数据的轻量级样例，AI 就能帮你推断数据结构并生成一份专属的 Python 分析代码。你在本地机器上运行这段代码，即可安全、高效地完成自动质检、查重、空值、枚举值、异常值、KPI 汇总、相关性和图表分析。这从根本上杜绝了数据泄露风险，并彻底打破了 Token 消耗与数据规模的限制。
+为了解决这些问题，本工具采用了**AI 分析数据框架 -> 生成定制化脚本 -> 纯本地运行**的模式。你只需提供仅包含表头和 1-2 行脱敏数据的轻量级样例，AI 就能帮你推断数据结构并生成一份专属的 Python 分析代码。你在本地机器上运行这段代码，即可安全、高效地完成自动质检、查重、空值、枚举值、异常值、KPI 汇总、相关性和图表分析。这杜绝了数据泄露风险，并打破了 Token 消耗与数据规模的限制。
 
 `excel-data-profiler` is designed to assist with the initial data exploration and quality profiling of large Excel/CSV files. Uploading full datasets directly to AI chat interfaces typically presents two major issues:
 1. **Data Privacy and Leakage Risks**: Sensitive business or personal data is strictly regulated and cannot be exposed to online LLM APIs.
